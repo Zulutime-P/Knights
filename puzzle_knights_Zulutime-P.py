@@ -1,3 +1,4 @@
+from logic import *
 
 # Define propositions for knights and knaves for each character
 A_knight, A_knave = map(exprvar, ['A_knight', 'A_knave'])
