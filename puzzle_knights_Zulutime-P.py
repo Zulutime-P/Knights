@@ -1,52 +1,50 @@
 from logic import *
 
-# Define propositions for knights and knaves for each character
-A_knight, A_knave = map(exprvar, ['A_knight', 'A_knave'])
-B_knight, B_knave = map(exprvar, ['B_knight', 'B_knave'])
-C_knight, C_knave = map(exprvar, ['C_knight', 'C_knave'])
+AKnight = Symbol("A is a Knight")
+AKnave = Symbol("A is a Knave")
 
-# Puzzle 0: A says “I am both a knight and a knave.”
-knowledge0 = And(Or(A_knight, A_knave), Equivalent(A_knight, And(A_knight, A_knave)))
+BKnight = Symbol("B is a Knight")
+BKnave = Symbol("B is a Knave")
 
-# Puzzle 1: A says “We are both knaves.”, B says nothing.
+CKnight = Symbol("C is a Knight")
+CKnave = Symbol("C is a Knave")
+
+knowledge0 = And(
+    Implication(Symbol('A'), And(Symbol('A'), Not(Symbol('A'))))
+)
+
 knowledge1 = And(
-    Equivalent(A_knight, And(A_knave, B_knave)),  # A's statement
-    Not(B_knight)  # B says nothing
+    Implication(Symbol('A'), And(Not(Symbol('A')), Not(Symbol('B')))),
+    Symbol('B')
 )
 
-# Puzzle 2: A says “We are the same kind.”, B says “We are of different kinds.”
 knowledge2 = And(
-    Or(And(A_knight, B_knight), And(A_knave, B_knave)),  # A's statement
-    Or(And(A_knight, B_knave), And(A_knave, B_knight))  # B's statement
+    Biconditional(Symbol('A'), Symbol('B')),
+    Biconditional(Not(Symbol('A')), Not(Symbol('B')))
 )
 
-# Puzzle 3: A says either “I am a knight.” or “I am a knave.”, B says “A said ‘I am a knave.’”, B then says “C is a knave.”, C says “A is a knight.”
-knowledge3 = And(
-    Or(A_knight, A_knave),  # A's ambiguous statement
-    Equivalent(B_knight, Not(A_knave)),  # B's first statement
-    Equivalent(C_knave, B_knight),  # B's second statement about C
-    Equivalent(A_knight, C_knight)  # C's statement about A
+knowledge3 = Or(
+    And(
+        Implication(Symbol('A'), Symbol('A')),
+        Implication(Not(Symbol('A')), Not(Symbol('A')))
+    ),
+    And(
+        Implication(Symbol('B'), Not(Symbol('A'))),
+        Implication(Not(Symbol('B')), Symbol('A')),
+        Implication(Symbol('B'), Not(Symbol('C'))),
+        Implication(Not(Symbol('B')), Symbol('C')),
+        Implication(Symbol('C'), Symbol('A')),
+        Implication(Not(Symbol('C')), Not(Symbol('A')))
+    )
 )
 
-# Solve puzzles using model checking
-def solve_puzzle(knowledge):
-    solution = satisfiable(knowledge)
-    if solution:
-        model = solution.satisfy_one()
-        for variable, value in model.items():
-            print(f"{variable}: {'Knight' if value else 'Knave'}")
-    else:
-        print("No solution found.")
+queries = [
+    (knowledge0, Symbol('A')),
+    (knowledge1, And(Symbol('A'), Symbol('B'))),
+    (knowledge2, And(Symbol('A'), Symbol('B'))),
+    (knowledge3, And(Or(Symbol('A'), Not(Symbol('A'))), Symbol('C')))
+]
 
-# Solve each puzzle
-print("Puzzle 0:")
-solve_puzzle(knowledge0)
-
-print("\nPuzzle 1:")
-solve_puzzle(knowledge1)
-
-print("\nPuzzle 2:")
-solve_puzzle(knowledge2)
-
-print("\nPuzzle 3:")
-solve_puzzle(knowledge3)
+for i, (knowledge, query) in enumerate(queries):
+    result = model_check(knowledge, query)
+    print(f"Puzzle {i}:", "Entailed" if result else "Not Entailed")
